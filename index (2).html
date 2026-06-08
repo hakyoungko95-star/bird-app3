@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>조류 충돌 예방 앱</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#e8f5e9;min-height:100vh;display:flex;justify-content:center;align-items:flex-start;padding:24px 12px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+.app{width:100%;max-width:420px;background:#f5f5f5;border-radius:20px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.10)}
+.topbar{background:#1D9E75;padding:20px 20px 16px;color:#fff}
+.topbar-title{font-size:18px;font-weight:600;margin-bottom:2px}
+.topbar-sub{font-size:13px;opacity:0.85}
+.nav{display:grid;grid-template-columns:repeat(4,1fr);background:#fff;border-bottom:1px solid #eee}
+.nav-btn{padding:10px 4px 8px;text-align:center;cursor:pointer;border:none;background:transparent;font-size:11px;color:#888;display:flex;flex-direction:column;align-items:center;gap:4px}
+.nav-btn i{font-size:20px}
+.nav-btn.active{color:#1D9E75;border-bottom:2px solid #1D9E75}
+.page{display:none;padding:16px}
+.page.active{display:block}
+.card{background:#fff;border:1px solid #eee;border-radius:12px;padding:14px;margin-bottom:12px}
+.card-title{font-size:14px;font-weight:600;color:#222;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.field-label{font-size:12px;color:#888;margin-bottom:4px}
+.field{margin-bottom:12px}
+select{width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:14px;background:#fff;color:#222}
+select:focus{border-color:#1D9E75;outline:none}
+input[type=range]{width:100%;accent-color:#1D9E75}
+.divider{border:none;border-top:1px solid #f0f0f0;margin:14px 0}
+.sub-label{font-size:12px;font-weight:600;color:#555;margin-bottom:10px;display:flex;align-items:center;gap:5px}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.toggle-label{font-size:13px;color:#222}
+.toggle{width:42px;height:24px;border-radius:12px;background:#ccc;border:none;cursor:pointer;position:relative;transition:background 0.2s;flex-shrink:0}
+.toggle.on{background:#1D9E75}
+.toggle::after{content:'';position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:3px;left:3px;transition:left 0.2s}
+.toggle.on::after{left:21px}
+.info-box{background:#EEEDFE;border-radius:8px;padding:10px 12px;font-size:12px;color:#534AB7;line-height:1.5;margin-top:8px}
+.risk-result{border-radius:10px;padding:12px;margin-top:4px}
+.risk-num{font-size:26px;font-weight:700}
+.risk-sub{font-size:13px;margin-top:4px;line-height:1.5}
+.bar-wrap{background:rgba(0,0,0,0.1);border-radius:4px;height:8px;overflow:hidden;margin-top:6px}
+.bar-fill{height:100%;border-radius:4px;transition:width 0.5s}
+.chip-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.chip{padding:5px 12px;border-radius:20px;font-size:12px;border:1px solid #ddd;cursor:pointer;background:#fff;color:#888}
+.chip.active{background:#1D9E75;color:#fff;border-color:#1D9E75}
+.sol-item{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid #f0f0f0;align-items:flex-start}
+.sol-item:last-child{border-bottom:none}
+.sol-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.sol-name{font-size:13px;font-weight:600;color:#222}
+.sol-desc{font-size:12px;color:#888;margin-top:2px;line-height:1.4}
+.eff-row{display:flex;align-items:center;gap:6px;margin-top:6px}
+.eff-wrap{flex:1;background:#f0f0f0;border-radius:3px;height:5px;overflow:hidden}
+.eff-fill{height:100%;border-radius:3px}
+.eff-pct{font-size:11px;color:#aaa;min-width:28px;text-align:right}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;margin-left:4px}
+.badge-low{background:#EAF3DE;color:#3B6D11}
+.badge-mid{background:#FAEEDA;color:#854F0B}
+.badge-high{background:#FCEBEB;color:#A32D2D}
+.badge-sw{background:#EEEDFE;color:#534AB7}
+.check-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f0f0f0;cursor:pointer}
+.check-item:last-child{border-bottom:none}
+.check-box{width:22px;height:22px;border-radius:6px;border:1.5px solid #ccc;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.15s}
+.check-box.on{background:#1D9E75;border-color:#1D9E75}
+.check-text{font-size:13px;color:#222;line-height:1.4}
+.check-text.done{color:#ccc;text-decoration:line-through}
+.phase-label{font-size:11px;color:#aaa;font-weight:600;letter-spacing:0.05em;margin:14px 0 6px;text-transform:uppercase}
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.stat-box{background:#fff;border:1px solid #eee;border-radius:10px;padding:10px 8px;text-align:center}
+.stat-val{font-size:17px;font-weight:700;color:#222}
+.stat-lbl{font-size:11px;color:#888;margin-top:2px}
+.sbar-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.sbar-label{font-size:12px;color:#888;min-width:88px;text-align:right}
+.sbar-wrap{flex:1;background:#f0f0f0;border-radius:3px;height:16px;overflow:hidden}
+.sbar-fill{height:100%;border-radius:3px;display:flex;align-items:center;padding-left:6px}
+.sbar-pct{font-size:11px;color:#fff;font-weight:600}
+.progress-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.prog-wrap{background:#f0f0f0;border-radius:4px;height:7px;overflow:hidden;margin-bottom:14px}
+.prog-fill{height:100%;background:#1D9E75;border-radius:4px;transition:width 0.4s}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="topbar-title"><i class="ti ti-feather"></i> 조류 충돌 예방</div>
+    <div class="topbar-sub">Bird Window Collision Prevention</div>
+  </div>
+  <div class="nav">
+    <button class="nav-btn active" onclick="goPage('assess',this)"><i class="ti ti-clipboard-list"></i>진단</button>
+    <button class="nav-btn" onclick="goPage('solution',this)"><i class="ti ti-shield-check"></i>해결책</button>
+    <button class="nav-btn" onclick="goPage('checklist',this)"><i class="ti ti-checklist"></i>체크</button>
+    <button class="nav-btn" onclick="goPage('stats',this)"><i class="ti ti-chart-bar"></i>통계</button>
+  </div>
+
+  <!-- 진단 -->
+  <div class="page active" id="page-assess">
+    <div class="card">
+      <div class="card-title"><i class="ti ti-building"></i> 건물 위험도 진단</div>
+      <div class="field">
+        <div class="field-label">건물 유형</div>
+        <select id="bldType" onchange="calcRisk()">
+          <option value="3">대형 유리 외벽 건물</option>
+          <option value="2">일반 사무용 건물</option>
+          <option value="2">아파트·주거 건물</option>
+          <option value="1">소규모 상가</option>
+        </select>
+      </div>
+      <div class="field">
+        <div class="field-label">주변 환경</div>
+        <select id="envType" onchange="calcRisk()">
+          <option value="3">공원·녹지 인접</option>
+          <option value="2">도심 가로수 거리</option>
+          <option value="1">주거 밀집지역</option>
+          <option value="0">나대지·주차장 주변</option>
+        </select>
+      </div>
+      <div class="field">
+        <div class="field-label">유리 특성</div>
+        <select id="glassType" onchange="calcRisk()">
+          <option value="3">반사 코팅 / 미러 유리</option>
+          <option value="2">투명 통유리</option>
+          <option value="1">반투명 유리</option>
+          <option value="0">패턴 프린팅 유리</option>
+        </select>
+      </div>
+      <div class="field">
+        <div class="field-label" style="display:flex;justify-content:space-between">
+          <span>건물 층수</span>
+          <span id="floorOut" style="font-weight:600;color:#222">5층</span>
+        </div>
+        <input type="range" min="1" max="40" value="5" step="1" id="floorRange"
+          oninput="document.getElementById('floorOut').textContent=this.value+'층';calcRisk()">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:#bbb;margin-top:2px">
+          <span>저층 1층</span><span>중층 20층</span><span>초고층 40층</span>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <div class="sub-label"><i class="ti ti-wave-square"></i> 투명 방음벽 포함</div>
+      <div class="toggle-row">
+        <span class="toggle-label">투명 방음벽이 있나요?</span>
+        <button class="toggle" id="swToggle" onclick="toggleSW()"></button>
+      </div>
+      <div id="swFields" style="display:none">
+        <div class="field">
+          <div class="field-label">방음벽 위치</div>
+          <select id="swLocation" onchange="calcRisk()">
+            <option value="3">도로변 직접 인접 (교통량 많음)</option>
+            <option value="2">단지 내부 도로 인접</option>
+            <option value="1">보행로·공원 인접</option>
+          </select>
+        </div>
+        <div class="field">
+          <div class="field-label">방음벽 유리 종류</div>
+          <select id="swGlass" onchange="calcRisk()">
+            <option value="3">완전 투명 (무패턴)</option>
+            <option value="2">반투명 / 약한 패턴</option>
+            <option value="1">UV 코팅 또는 조류안전 필름 적용</option>
+          </select>
+        </div>
+        <div class="field">
+          <div class="field-label" style="display:flex;justify-content:space-between">
+            <span>방음벽 길이</span>
+            <span id="swLenOut" style="font-weight:600;color:#222">30m</span>
+          </div>
+          <input type="range" min="5" max="200" value="30" step="5" id="swLength"
+            oninput="document.getElementById('swLenOut').textContent=this.value+'m';calcRisk()">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:#bbb;margin-top:2px">
+            <span>5m</span><span>100m</span><span>200m</span>
+          </div>
+        </div>
+        <div class="info-box" id="swInfo"></div>
+      </div>
+
+      <div id="riskResult" style="margin-top:12px"></div>
+    </div>
+  </div>
+
+  <!-- 해결책 -->
+  <div class="page" id="page-solution">
+    <div class="chip-row">
+      <button class="chip active" onclick="filterSol('all',this)">전체</button>
+      <button class="chip" onclick="filterSol('low',this)">저비용</button>
+      <button class="chip" onclick="filterSol('mid',this)">중간</button>
+      <button class="chip" onclick="filterSol('high',this)">고비용</button>
+      <button class="chip" onclick="filterSol('sw',this)">방음벽 전용</button>
+    </div>
+    <div class="card" style="padding:14px 14px 4px"><div id="solList"></div></div>
+  </div>
+
+  <!-- 체크리스트 -->
+  <div class="page" id="page-checklist">
+    <div class="card">
+      <div class="progress-row">
+        <span style="font-size:13px;color:#888">완료율</span>
+        <span id="progPct" style="font-size:13px;font-weight:600;color:#222">0%</span>
+      </div>
+      <div class="prog-wrap"><div class="prog-fill" id="progBar" style="width:0%"></div></div>
+      <div id="checkListEl"></div>
+    </div>
+  </div>
+
+  <!-- 통계 -->
+  <div class="page" id="page-stats">
+    <div class="stat-grid">
+      <div class="stat-box"><div class="stat-val">800만</div><div class="stat-lbl">연간 충돌(마리)</div></div>
+      <div class="stat-box"><div class="stat-val">56%</div><div class="stat-lbl">충돌 후 사망</div></div>
+      <div class="stat-box"><div class="stat-val">90%</div><div class="stat-lbl">예방 가능</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-building"></i> 건물 유형별 비율</div>
+      <div id="bldgBars"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-calendar"></i> 충돌 다발 시기</div>
+      <div id="seasonBars"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-stairs"></i> 층수대별 충돌 위험도</div>
+      <div id="floorBars"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const sols=[
+  {cost:'low',sw:false,icon:'ti-eye-off',bg:'#E1F5EE',ic:'#0F6E56',name:'버드 테이프·스티커 부착',desc:'5cm 이하 간격으로 창문에 세로줄 테이프를 붙입니다.',eff:72},
+  {cost:'low',sw:false,icon:'ti-blinds',bg:'#E6F1FB',ic:'#185FA5',name:'외부 커튼·블라인드 활용',desc:'유리 반사를 차단하는 외부 스크린을 설치합니다.',eff:65},
+  {cost:'low',sw:false,icon:'ti-plant',bg:'#EAF3DE',ic:'#3B6D11',name:'실내 식물 위치 변경',desc:'유리 내부 식물을 안쪽으로 이동해 충돌 유인을 줄입니다.',eff:45},
+  {cost:'mid',sw:false,icon:'ti-sun',bg:'#FAEEDA',ic:'#854F0B',name:'UV 반사 방지 필름 시공',desc:'자외선 패턴 필름으로 조류에게만 보입니다.',eff:88},
+  {cost:'mid',sw:false,icon:'ti-barrier-block',bg:'#EEEDFE',ic:'#534AB7',name:'외부 그물망 설치',desc:'건물 외벽 그물로 충돌을 물리적으로 차단합니다.',eff:92},
+  {cost:'mid',sw:false,icon:'ti-moon',bg:'#FBEAF0',ic:'#993556',name:'야간 조명 시간 제어',desc:'철새 이동철 야간 조명을 소등합니다.',eff:55},
+  {cost:'high',sw:false,icon:'ti-square-asterisk',bg:'#E1F5EE',ic:'#085041',name:'프릿 패턴 유리 교체',desc:'세라믹 패턴 내장 유리로 반영구 효과입니다.',eff:95},
+  {cost:'high',sw:false,icon:'ti-fence',bg:'#FAECE7',ic:'#993C1D',name:'케이블 스크린 시스템',desc:'외부 수직 와이어로 미관 손상 없이 효과적입니다.',eff:90},
+  {cost:'sw',sw:true,icon:'ti-wave-square',bg:'#EEEDFE',ic:'#534AB7',name:'방음벽 조류안전 필름',desc:'투명 방음벽 전면에 UV 패턴 필름을 시공합니다. 시인성 영향 없이 충돌 예방에 효과적입니다.',eff:87},
+  {cost:'sw',sw:true,icon:'ti-line-dashed',bg:'#E1F5EE',ic:'#0F6E56',name:'방음벽 수직 줄무늬 도장',desc:'10cm 이하 간격 수직 줄무늬 도장. 저비용으로 빠른 적용이 가능합니다.',eff:70},
+  {cost:'sw',sw:true,icon:'ti-barrier-block',bg:'#FAEEDA',ic:'#854F0B',name:'방음벽 외부 그물망',desc:'방음벽 도로 반대편에 그물망을 추가 설치해 물리적으로 차단합니다.',eff:91},
+  {cost:'sw',sw:true,icon:'ti-square-asterisk',bg:'#FAECE7',ic:'#993C1D',name:'조류안전 패턴 방음벽 교체',desc:'조류충돌 방지 패턴이 내장된 패널로 교체합니다. 장기적으로 가장 효과적입니다.',eff:96},
+];
+
+const checks=[
+  {task:'야간 실내 조명 소등',phase:'즉시',done:false},
+  {task:'창문 안쪽 식물 위치 변경',phase:'즉시',done:false},
+  {task:'충돌 현황 기록 시작',phase:'즉시',done:false},
+  {task:'건물 관리자에게 공식 보고',phase:'즉시',done:false},
+  {task:'방음벽 주변 충돌 지점 기록',phase:'즉시',done:false},
+  {task:'버드 스티커 5cm 간격 부착',phase:'단기',done:false},
+  {task:'외부 블라인드·스크린 설치',phase:'단기',done:false},
+  {task:'조류 전문가에 현장 조사 요청',phase:'단기',done:false},
+  {task:'지자체 야생동물 보호 부서 신고',phase:'단기',done:false},
+  {task:'방음벽 조류안전 필름 시공 견적',phase:'단기',done:false},
+  {task:'UV 방지 필름 전문 시공',phase:'장기',done:false},
+  {task:'외부 그물망 또는 케이블 설치',phase:'장기',done:false},
+  {task:'프릿 패턴 유리 교체 계획',phase:'장기',done:false},
+  {task:'야간 조명 자동 소등 시스템',phase:'장기',done:false},
+  {task:'조류안전 패턴 방음벽 교체 계획',phase:'장기',done:false},
+  {task:'충돌 모니터링 자원봉사 참여',phase:'장기',done:false},
+];
+
+let swOn=false, curFilter='all';
+
+function goPage(name,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  btn.classList.add('active');
+}
+
+function toggleSW(){
+  swOn=!swOn;
+  document.getElementById('swToggle').classList.toggle('on',swOn);
+  document.getElementById('swFields').style.display=swOn?'block':'none';
+  calcRisk();
+}
+
+function calcRisk(){
+  const bld=parseInt(document.getElementById('bldType').value);
+  const env=parseInt(document.getElementById('envType').value);
+  const gls=parseInt(document.getElementById('glassType').value);
+  const fl=parseInt(document.getElementById('floorRange').value);
+  const fs=fl<=3?1:fl<=10?2:fl<=20?3:fl<=30?4:5;
+  let swScore=0;
+  if(swOn){
+    const loc=parseInt(document.getElementById('swLocation').value);
+    const sg=parseInt(document.getElementById('swGlass').value);
+    const len=parseInt(document.getElementById('swLength').value);
+    const ls=len<=20?1:len<=80?2:3;
+    swScore=Math.round((loc+sg+ls)/3*2);
+    const risk=sg===1?'낮음':sg===2?'보통':'높음';
+    const rc=sg===1?'#3B6D11':sg===2?'#854F0B':'#A32D2D';
+    document.getElementById('swInfo').innerHTML=
+      `<i class="ti ti-info-circle"></i> 방음벽 위험도: <strong style="color:${rc}">${risk}</strong> — ${len}m 구간. `+
+      (sg===1?'현재 조류안전 처리 적용 중입니다.':sg===2?'일부 구간 필름 추가를 권장합니다.':'전면 필름 또는 패턴 교체가 시급합니다.');
+  }
+  const maxTotal=3+3+3+5+(swOn?6:0);
+  const total=bld+env+gls+fs+swScore;
+  const pct=Math.round(total/maxTotal*100);
+  let level,bg,color,desc;
+  if(pct>=75){level='매우 높음';bg='#FCEBEB';color='#A32D2D';desc='즉각적인 조치가 필요합니다. 고층일수록 이주 철새 경로와 겹칠 위험이 높습니다.';}
+  else if(pct>=55){level='높음';bg='#FAEEDA';color='#854F0B';desc='단기간 내 조치를 권장합니다. 방음벽이 있다면 필름 시공을 우선 검토하세요.';}
+  else if(pct>=35){level='보통';bg='#E6F1FB';color='#185FA5';desc='일부 예방 조치가 필요합니다. 모니터링과 저비용 방안을 적용하세요.';}
+  else{level='낮음';bg='#EAF3DE';color='#3B6D11';desc='현재 위험이 낮습니다. 이동 철(봄·가을)에 정기 점검을 권장합니다.';}
+  const fl2=parseInt(document.getElementById('floorRange').value);
+  const tag=fl2<=3?'저층':fl2<=10?'중저층':fl2<=20?'중층':fl2<=30?'고층':'초고층';
+  document.getElementById('riskResult').innerHTML=`
+    <div class="risk-result" style="background:${bg}">
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <span style="font-size:12px;color:${color}">${tag} ${fl2}층 · 충돌 위험도</span>
+        <span class="risk-num" style="color:${color}">${level}</span>
+      </div>
+      <div class="bar-wrap"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div>
+      <div class="risk-sub" style="color:${color}">${desc}</div>
+    </div>`;
+}
+
+function filterSol(f,btn){
+  curFilter=f;
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  btn.classList.add('active');
+  renderSols();
+}
+
+function renderSols(){
+  const list=sols.filter(s=>curFilter==='all'||(curFilter==='sw'?s.sw:s.cost===curFilter));
+  document.getElementById('solList').innerHTML=list.map(s=>`
+    <div class="sol-item">
+      <div class="sol-icon" style="background:${s.bg}"><i class="ti ${s.icon}" style="color:${s.ic}"></i></div>
+      <div style="flex:1">
+        <div class="sol-name">${s.name}<span class="badge ${s.sw?'badge-sw':'badge-'+s.cost}">${s.sw?'방음벽':s.cost==='low'?'저비용':s.cost==='mid'?'중간':'고비용'}</span></div>
+        <div class="sol-desc">${s.desc}</div>
+        <div class="eff-row">
+          <span style="font-size:11px;color:#aaa">효과</span>
+          <div class="eff-wrap"><div class="eff-fill" style="width:${s.eff}%;background:${s.eff>=85?'#1D9E75':s.eff>=65?'#BA7517':'#E24B4A'}"></div></div>
+          <span class="eff-pct">${s.eff}%</span>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function renderChecks(){
+  const phases=['즉시','단기','장기'];
+  let html='';
+  phases.forEach(ph=>{
+    html+=`<div class="phase-label">${ph} 조치</div>`;
+    checks.filter(c=>c.phase===ph).forEach(c=>{
+      const i=checks.indexOf(c);
+      html+=`<div class="check-item" onclick="toggleCheck(${i})">
+        <div class="check-box ${c.done?'on':''}">${c.done?'<i class="ti ti-check" style="font-size:13px;color:#fff"></i>':''}</div>
+        <span class="check-text ${c.done?'done':''}">${c.task}</span>
+      </div>`;
+    });
+  });
+  document.getElementById('checkListEl').innerHTML=html;
+  const done=checks.filter(c=>c.done).length;
+  const pct=Math.round(done/checks.length*100);
+  document.getElementById('progPct').textContent=pct+'%';
+  document.getElementById('progBar').style.width=pct+'%';
+}
+
+function toggleCheck(i){checks[i].done=!checks[i].done;renderChecks();}
+
+function renderStatBars(id,items){
+  const max=Math.max(...items.map(i=>i.v));
+  document.getElementById(id).innerHTML=items.map(it=>`
+    <div class="sbar-row">
+      <div class="sbar-label">${it.l}</div>
+      <div class="sbar-wrap"><div class="sbar-fill" style="width:${Math.round(it.v/max*100)}%;background:${it.c}">
+        <span class="sbar-pct">${it.v}%</span></div></div>
+    </div>`).join('');
+}
+
+calcRisk(); renderSols(); renderChecks();
+renderStatBars('bldgBars',[
+  {l:'유리 외벽',v:42,c:'#E24B4A'},{l:'아파트·주거',v:28,c:'#BA7517'},
+  {l:'소규모 상가',v:16,c:'#378ADD'},{l:'교육·공공',v:14,c:'#1D9E75'}
+]);
+renderStatBars('seasonBars',[
+  {l:'봄 (4~5월)',v:38,c:'#1D9E75'},{l:'가을 (9~10월)',v:34,c:'#BA7517'},
+  {l:'여름 (6~8월)',v:18,c:'#378ADD'},{l:'겨울 (11~3월)',v:10,c:'#534AB7'}
+]);
+renderStatBars('floorBars',[
+  {l:'1~3층 저층',v:22,c:'#1D9E75'},{l:'4~10층 중저층',v:38,c:'#639922'},
+  {l:'11~20층 중층',v:45,c:'#BA7517'},{l:'21~30층 고층',v:52,c:'#E24B4A'},
+  {l:'31~40층 초고층',v:48,c:'#534AB7'}
+]);
+</script>
+</body>
+</html>
